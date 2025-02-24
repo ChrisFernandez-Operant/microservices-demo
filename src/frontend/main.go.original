@@ -146,96 +146,31 @@ func main() {
 	mustConnGRPC(ctx, &svc.adSvcConn, svc.adSvcAddr)
 
 	r := mux.NewRouter()
-	r.HandleFunc(baseUrl+"/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc(baseUrl+"/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc(baseUrl+"/cart", svc.viewCartHandler).Methods(http.MethodGet, http.MethodHead)
-	r.HandleFunc(baseUrl+"/cart", svc.addToCartHandler).Methods(http.MethodPost)
-	r.HandleFunc(baseUrl+"/cart/empty", svc.emptyCartHandler).Methods(http.MethodPost)
-	r.HandleFunc(baseUrl+"/setCurrency", svc.setCurrencyHandler).Methods(http.MethodPost)
-	r.HandleFunc(baseUrl+"/logout", svc.logoutHandler).Methods(http.MethodGet)
-	r.HandleFunc(baseUrl+"/cart/checkout", svc.placeOrderHandler).Methods(http.MethodPost)
-	r.HandleFunc(baseUrl+"/assistant", svc.assistantHandler).Methods(http.MethodGet)
-	r.PathPrefix(baseUrl+"/static/").Handler(http.StripPrefix(baseUrl+"/static/", http.FileServer(http.Dir("./static/"))))
-	r.HandleFunc(baseUrl+"/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
-	r.HandleFunc(baseUrl+"/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
-	r.HandleFunc(baseUrl+"/product-meta/{ids}", svc.getProductByID).Methods(http.MethodGet)
-	r.HandleFunc(baseUrl+"/bot", svc.chatBotHandler).Methods(http.MethodPost)
-
-	// ========== NEW TEST ENDPOINTS ==========
-	r.HandleFunc(baseUrl+"/reset_password", svc.resetPasswordHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/create_password", svc.createPasswordHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/signin", svc.signinHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/signup", svc.signupHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/auth", svc.authHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/authenticate", svc.authenticateHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/token", svc.tokenHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/oauth", svc.oauthHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/session/renew", svc.sessionRenewHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/profile", svc.profileHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc(baseUrl+"/multi_method", svc.multiMethodHandler).Methods(
-		http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete,
-	)
-	// ========== END NEW ENDPOINTS ==========
+	r.HandleFunc(baseUrl + "/", svc.homeHandler).Methods(http.MethodGet, http.MethodHead)
+	r.HandleFunc(baseUrl + "/product/{id}", svc.productHandler).Methods(http.MethodGet, http.MethodHead)
+	r.HandleFunc(baseUrl + "/cart", svc.viewCartHandler).Methods(http.MethodGet, http.MethodHead)
+	r.HandleFunc(baseUrl + "/cart", svc.addToCartHandler).Methods(http.MethodPost)
+	r.HandleFunc(baseUrl + "/cart/empty", svc.emptyCartHandler).Methods(http.MethodPost)
+	r.HandleFunc(baseUrl + "/setCurrency", svc.setCurrencyHandler).Methods(http.MethodPost)
+	r.HandleFunc(baseUrl + "/logout", svc.logoutHandler).Methods(http.MethodGet)
+	r.HandleFunc(baseUrl + "/cart/checkout", svc.placeOrderHandler).Methods(http.MethodPost)
+	r.HandleFunc(baseUrl + "/assistant", svc.assistantHandler).Methods(http.MethodGet)
+	r.PathPrefix(baseUrl + "/static/").Handler(http.StripPrefix(baseUrl + "/static/", http.FileServer(http.Dir("./static/"))))
+	r.HandleFunc(baseUrl + "/robots.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "User-agent: *\nDisallow: /") })
+	r.HandleFunc(baseUrl + "/_healthz", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "ok") })
+	r.HandleFunc(baseUrl + "/product-meta/{ids}", svc.getProductByID).Methods(http.MethodGet)
+	r.HandleFunc(baseUrl + "/bot", svc.chatBotHandler).Methods(http.MethodPost)
 
 	var handler http.Handler = r
-	handler = &logHandler{log: log, next: handler}
-	handler = ensureSessionID(handler)
-	handler = otelhttp.NewHandler(handler, "frontend")
+	handler = &logHandler{log: log, next: handler}     // add logging
+	handler = ensureSessionID(handler)                 // add session ID
+	handler = otelhttp.NewHandler(handler, "frontend") // add OTel tracing
 
 	log.Infof("starting server on " + addr + ":" + srvPort)
 	log.Fatal(http.ListenAndServe(addr+":"+srvPort, handler))
 }
-
-// ========== NEW HANDLERS ==========
-func (fs *frontendServer) resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
-		http.Error(w, "Password reset failed", http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprint(w, "Reset Password Endpoint")
-}
-
-func (fs *frontendServer) createPasswordHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Create Password Endpoint")
-}
-
-func (fs *frontendServer) signinHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Signin Endpoint")
-}
-
-func (fs *frontendServer) signupHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Signup Endpoint")
-}
-
-func (fs *frontendServer) authHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Auth Endpoint")
-}
-
-func (fs *frontendServer) authenticateHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Authenticate Endpoint")
-}
-
-func (fs *frontendServer) tokenHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Token Endpoint")
-}
-
-func (fs *frontendServer) oauthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "OAuth Endpoint")
-}
-
-func (fs *frontendServer) sessionRenewHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Session Renew Endpoint")
-}
-
-func (fs *frontendServer) profileHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Profile Endpoint")
-}
-
-func (fs *frontendServer) multiMethodHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Method used: %s", r.Method)
-}
-
 func initStats(log logrus.FieldLogger) {
+	// TODO(arbrown) Implement OpenTelemtry stats
 }
 
 func initTracing(log logrus.FieldLogger, ctx context.Context, svc *frontendServer) (*sdktrace.TracerProvider, error) {
@@ -251,15 +186,20 @@ func initTracing(log logrus.FieldLogger, ctx context.Context, svc *frontendServe
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()))
 	otel.SetTracerProvider(tp)
+
 	return tp, err
 }
 
 func initProfiling(log logrus.FieldLogger, service, version string) {
+	// TODO(ahmetb) this method is duplicated in other microservices using Go
+	// since they are not sharing packages.
 	for i := 1; i <= 3; i++ {
 		log = log.WithField("retry", i)
 		if err := profiler.Start(profiler.Config{
 			Service:        service,
 			ServiceVersion: version,
+			// ProjectID must be set if not running on GCP.
+			// ProjectID: "my-project",
 		}); err != nil {
 			log.Warnf("warn: failed to start profiler: %+v", err)
 		} else {
