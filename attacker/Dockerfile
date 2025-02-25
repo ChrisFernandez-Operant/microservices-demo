@@ -1,4 +1,3 @@
-# Use specific Alpine version for reproducibility
 FROM alpine:3.19
 
 # Install base tools with no-cache and cleanup
@@ -19,7 +18,7 @@ RUN apk add --no-cache --virtual .build-deps \
     gcc \
     musl-dev
 
-# Install siege 4.1.4 from source (specific version)
+# Install siege 4.1.4 from source
 RUN wget https://download.joedog.org/siege/siege-4.1.4.tar.gz \
     && tar -xzf siege-*.tar.gz \
     && cd siege-* \
@@ -30,12 +29,14 @@ RUN wget https://download.joedog.org/siege/siege-4.1.4.tar.gz \
     && rm siege-*.tar.gz \
     && rm -rf siege-*
 
-# Install hey 0.1.4 (specific version)
+# Install hey
 RUN wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64 -O /usr/local/bin/hey \
     && chmod +x /usr/local/bin/hey
 
-# Install SQLMap via pip
-RUN pip3 install --no-cache-dir sqlmap
+# Install SQLMap in virtual environment
+RUN python3 -m venv /opt/sqlmap-venv \
+    && /opt/sqlmap-venv/bin/pip install --no-cache-dir sqlmap \
+    && ln -s /opt/sqlmap-venv/bin/sqlmap /usr/local/bin/sqlmap
 
 # Clean build dependencies
 RUN apk del .build-deps
@@ -45,13 +46,12 @@ RUN mkdir -p /scripts
 COPY attack_scripts/* /scripts/
 RUN chmod +x /scripts/*.sh
 
-# Healthcheck for container monitoring
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD pgrep -f attack_scripts || exit 1
 
 WORKDIR /scripts
 
-# Runtime configuration (override with -e in docker run/k8s)
 ENV TARGET_HOST=frontend \
     TARGET_PORT=80 \
     BASE_PATH=""
