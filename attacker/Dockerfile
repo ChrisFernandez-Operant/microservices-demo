@@ -27,8 +27,8 @@ RUN wget https://download.joedog.org/siege/siege-4.1.4.tar.gz \
     && make \
     && make install \
     && cd .. \
-    && rm -rf siege-* \
-    && rm siege-*.tar.gz
+    && rm siege-*.tar.gz \
+    && rm -rf siege-*
 
 # Install hey 0.1.4 (specific version)
 RUN wget https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64 -O /usr/local/bin/hey \
