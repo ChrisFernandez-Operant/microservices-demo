@@ -1,5 +1,5 @@
 # Copyright 2024 Security Testing Setup
-# Licensed under Apache License 2.0 (matching original cluster's license)
+# Licensed under Apache License 2.0
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,13 +34,13 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
-        # EXACT image format from your frontend deployment
         image: us-east4-docker.pkg.dev/operant-ai-2024/sales-demo-apps/attacker:latest
+        command: ["timeout", "30m", "/scripts/start_attacks.sh"]  # Auto-stop after 30 minutes
         env:
         - name: TARGET_HOST
-          value: "frontend" # Auto-discovers via k8s DNS
+          value: "frontend"
         - name: TARGET_PORT
-          value: "80"       # Matches frontend service port
+          value: "80"
         - name: BASE_PATH
           value: ""
         resources:
@@ -58,12 +58,10 @@ spec:
         readinessProbe:
           exec:
             command: ["sh", "-c", "test -f /scripts/start_attacks.sh"]
-      # Add initContainer to wait for frontend (matches loadgenerator pattern)
       initContainers:
       - name: frontend-check
         image: busybox:latest
-        command: ['sh', '-c',
-          'until nslookup frontend; do echo waiting for frontend; sleep 2; done']
+        command: ['sh', '-c', 'until nslookup frontend; do echo waiting for frontend; sleep 2; done']
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
