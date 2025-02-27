@@ -1,2 +1,2 @@
-#!/bin/sh
+#!/bin/bash
 siege -b -t1M -c 25 "${BASE_URL}/multi_method"

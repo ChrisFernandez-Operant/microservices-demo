@@ -1,92 +1,57 @@
-# Copyright 2024 Security Testing Setup
-# Licensed under Apache License 2.0
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: attacker
-  annotations:
-    sidecar.istio.io/inject: "false"
+  namespace: attacker
+  labels:
+    app: attacker
 spec:
-  ttlSecondsAfterFinished: 60
-  activeDeadlineSeconds: 1800  # 30 minutes
-  backoffLimit: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      app: attacker
   template:
     metadata:
       labels:
         app: attacker
     spec:
-      restartPolicy: Never  # Required for Jobs
       serviceAccountName: attacker
-      securityContext:
-        fsGroup: 1000
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
+      volumes:
+      - name: target-ip
+        emptyDir: {}
+      initContainers:
+      - name: get-frontend-ip
+        image: us-east4-docker.pkg.dev/operant-ai-2024/sales-demo-apps/attacker:latest
+        command:
+          - sh
+          - -c
+          - |
+            # In this case, we use internal DNS directly
+            echo "Using internal DNS for frontend service"
+            echo "frontend.default.svc.cluster.local" > /target/TARGET_IP
+        volumeMounts:
+        - name: target-ip
+          mountPath: /target
       containers:
       - name: attacker
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
         image: us-east4-docker.pkg.dev/operant-ai-2024/sales-demo-apps/attacker:latest
-        command: ["sh", "-c", "/scripts/start_attacks.sh"]
         env:
-        - name: TARGET_HOST
-          value: "frontend"
         - name: TARGET_PORT
           value: "80"
         - name: BASE_PATH
           value: ""
-        resources:
-          requests:
-            cpu: 300m
-            memory: 512Mi
-          limits:
-            cpu: 500m
-            memory: 1Gi
-      initContainers:
-      - name: frontend-check
-        image: curlimages/curl:8.5.0
-        command: ['sh', '-c',
-          'until curl -sSf http://frontend:80/_healthz >/dev/null; do
-            echo "Waiting for frontend...";
-            sleep 5;
-          done']
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          readOnlyRootFilesystem: true
+        - name: BASE_URL
+          value: "http://frontend.default.svc.cluster.local"
+        command:
+          - bash
+          - -c
+          - |
+            # Retrieve the internal DNS for frontend service
+            TARGET_HOST=$(cat /target/TARGET_IP)
+            export BASE_URL="http://${TARGET_HOST}:${TARGET_PORT}${BASE_PATH}"
+            echo "Using BASE_URL: ${BASE_URL}"
+            /scripts/start_attacks.sh
+        volumeMounts:
+        - name: target-ip
+          mountPath: /target
 
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: attacker
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: attacker
-rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["list"]
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: attacker
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: attacker
-subjects:
-- kind: ServiceAccount
-  name: attacker

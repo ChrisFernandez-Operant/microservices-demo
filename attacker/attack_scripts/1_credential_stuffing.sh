@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 TARGET="${BASE_URL}/signin"
 TOKEN="fixed_malicious_token_123"
 

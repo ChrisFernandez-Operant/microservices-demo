@@ -2,6 +2,7 @@ FROM alpine:3.19
 
 # Install base tools with no-cache and cleanup
 RUN apk add --no-cache --update \
+    bash \
     curl \
     nmap \
     python3 \
@@ -9,6 +10,8 @@ RUN apk add --no-cache --update \
     && apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.19/community \
     nikto \
     hydra \
+    jq \
+    apache2-utils \
     && rm -rf /var/cache/apk/*
 
 # Install build tools temporarily
@@ -51,9 +54,5 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD pgrep -f attack_scripts || exit 1
 
 WORKDIR /scripts
-
-ENV TARGET_HOST=frontend \
-    TARGET_PORT=80 \
-    BASE_PATH=""
 
 CMD ["./start_attacks.sh"]

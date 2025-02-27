@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 TOKEN="fixed_malicious_token_321"
 ENDPOINT="${BASE_URL}/multi_method"
 

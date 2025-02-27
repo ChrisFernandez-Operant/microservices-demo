@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ENDPOINTS=("signin" "signup" "auth" "authenticate")
 TOKEN="fixed_malicious_token_789"
 

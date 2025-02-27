@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 TARGET="${BASE_URL}/reset_password"
 TOKEN="fixed_malicious_token_456"
 
